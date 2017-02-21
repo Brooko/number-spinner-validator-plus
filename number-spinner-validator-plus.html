@@ -22,13 +22,104 @@ The validator for number-spinner-plus, it contain error and warning rules and co
 
       is: 'number-spinner-validator-plus',
 
-      properties: {
-        prop1: {
-          type: String,
-          value: 'number-spinner-validator-plus',
-        },
+      // RESET FLAGS FUNCTION
+      resetFlags:function() {
+        this.errorFlag=false;
+        this.warningFlag=false;
       },
 
+      // FUNTCION controlValue: observe and control the inserted value.
+      _controlValue:function (Value) {  
+
+        // 1. RESET FLAGS       
+        this.resetFlags();
+
+        if(discrete&&(this.allowedNumbers.indexOf(value)==-1)) {
+          this.errorFlag=true;
+          this.errorMessage=this.errors[notInListError].message;
+        };
+
+        // 2. NUMBER LIMIT ERRORS !!!!!!   SPLIT
+        if((this.minNumberAllowed!=null||this.maxNumberAllowed!=null)&&!this.errorFlag) {
+          this.errorFlag=((Value<this.minNumberAllowed)||(Value>this.maxNumberAllowed));
+        };
+
+        // 3. WARNING ENGINE
+        if(!this.errorFlag)   
+        {        
+          // 4. NUMBER LIMIT WARNINGS
+          if((this.minNumberWarned!=null||this.maxNumberWarned!=null)&&!this.warningFlag) {
+            this.warningFlag=((this.content<=this.minNumberWarned)||(this.content>=this.maxNumberWarned));
+          }; 
+        };
+      },
+
+      properties: {
+        value:{
+          value:null,
+          observer:"_controlValue",
+        },
+
+        errors:{
+          value:{ "notInListError":   { message:"The selected number has not been in the list"  },
+                  "maxExceededError": { message:"The maximum number has been exceeded"          },      
+                  "minExceededError": { message:"The mininum number has been exceeded"          },
+          },
+        },
+
+        allowedNumbers:{
+          type:Array,
+          value:null,
+        },
+
+        minAllowed:{
+          type:Number,
+          value:null,
+        },
+
+        maxAllowed:{
+          type:Number,
+          value:null,
+        },
+
+        errorFlag:{
+          type:Boolean,
+          value:null,
+        },
+
+        warnings:{ /*CHANGE!!!*/
+          type:Object,
+          value:[{ name:"notInListWarning",   message:"It is recommended to insert a different number"  },
+                {  name:"maxExceededWarning", message:"It is recommended to insert a larger number"     },      
+                {  name:"minExceededWarning", message:"It is recommended to insert a smaller number"
+                }],   
+        },
+
+        warnedNumbers:{
+          type:Array,
+          value:null,
+        },
+
+        minWarned:{
+          type:Number,
+          value:null,
+        },
+
+        maxWarned:{
+          type:Number,
+          value:null,
+        },
+
+        warningFlag:{
+          type:Boolean,
+          value:null,
+        },
+
+        discrete:{
+          type:Boolean,
+          value:null,
+        },
+      },
     });
   </script>
 </dom-module>
