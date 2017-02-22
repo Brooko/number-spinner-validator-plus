@@ -22,3 +22,29 @@ if(this.notRecommendedCharset!=null&&!this.warningFlag) {
 	var notRecommended =  new RegExp (this.notRecommendedCharset);
 	this.warningFlag =    notRecommended.test (Value);
 };
+
+
+//OLD MIXED CONTROL MIN MAX ALLOWED (set/get)
+
+      check:function(flagType)
+      {     
+        // 1. CHECK IF THE VALUE IS IN THE LIST (DISCRETE)
+        if(this.discrete(flagType) && (this.get(flagType+"Numbers").indexOf(value==-1))){
+          this.set(flagType+"Flag")=true;
+          this.message=this.get((flagType+"s")["notInList"+flagType.toUpperCase[0]+flagType.substr(1)].message);
+        };
+
+        // 2. CHECK IF THE VALUE IS LESS THAN MIN
+        if(this.get("min"+flagType.toUpperCase[0]+flagType.substr(1))!=null&&this.value<this.get("min"+flagType.toUpperCase[0]+flagType.substr(1))&&!this.get(flagType+"Flag"))
+        {
+          this.set(flagType+"Flag")=true;
+          this.message=this.get((flagType+"s")["minExceeded"+flagType.toUpperCase[0]+flagType.substr(1)].message);
+        };
+
+        // 3. CHECK IF THE VALUE IS MORE THAN MAX
+        if(this.get("max"+flagType.toUpperCase[0]+flagType.substr(1))!=null&&this.value>this.get("max"+flagType.toUpperCase[0]+flagType.substr(1))&&!this.get(flagType+"Flag"))
+        {
+          this.set(flagType+"Flag")=true;
+          this.message=this.get((flagType+"s")["maxExceededErro"+flagType.toUpperCase[0]+flagType.substr(1)].message);
+        };
+      },

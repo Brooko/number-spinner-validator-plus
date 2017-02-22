@@ -1,5 +1,3 @@
-<link rel="import" href="../polymer/polymer.html">
-
 <!--
 `number-spinner-validator-plus`
 The validator for number-spinner-plus, it contain error and warning rules and control functions
@@ -8,15 +6,6 @@ The validator for number-spinner-plus, it contain error and warning rules and co
 -->
 
 <dom-module id="number-spinner-validator-plus">
-  <template>
-    <style>
-      :host {
-        display: block;
-      }
-    </style>
-    <h2>Hello [[prop1]]</h2>
-  </template>
-
   <script>
     Polymer({
 
@@ -28,42 +17,77 @@ The validator for number-spinner-plus, it contain error and warning rules and co
         this.warningFlag=false;
       },
 
-      // FUNTCION controlValue: observe and control the inserted value.
-      _controlValue:function (Value) {  
+      // CHECK IF IS A DISCRETE NUMBER-SPINNER-PLUS
+      discrete:function() {
+        if(this.allowedNumbers!=null&&this.allowedNumbers!=undefined){
+          return true;
+        }
+        return false;
+      },
 
-        // 1. RESET FLAGS       
-        this.resetFlags();
-
-        if(discrete&&(this.allowedNumbers.indexOf(value)==-1)) {
+      // ERRORS CONTROLLER
+      controlErrors:function(){  
+        console.log("Il valore è "+this.value)   
+        // 1. CHECK IF THE VALUE IS IN THE LIST (DISCRETE)
+        if(this.discrete()&&this.allowedNumbers.indexOf(this.value)==-1) {
           this.errorFlag=true;
-          this.errorMessage=this.errors[notInListError].message;
+          this.message=this.errors["notInListError"].message;
+                  console.log("- "+this.message+" è un errore "+this.errorFlag);
         };
 
-        // 2. NUMBER LIMIT ERRORS !!!!!!   SPLIT
-        if((this.minNumberAllowed!=null||this.maxNumberAllowed!=null)&&!this.errorFlag) {
-          this.errorFlag=((Value<this.minNumberAllowed)||(Value>this.maxNumberAllowed));
+        // 2. CHECK IF THE VALUE IS LESS THAN MIN
+        if(this.minError!=null&&this.minError!=undefined&&this.value<this.minError&&(!this.errorFlag)) {
+          this.errorFlag=true;
+          this.message=this.errors["minExceededError"].message;
+                  console.log("- "+this.message+" è un errore "+this.errorFlag);
         };
 
-        // 3. WARNING ENGINE
-        if(!this.errorFlag)   
-        {        
-          // 4. NUMBER LIMIT WARNINGS
-          if((this.minNumberWarned!=null||this.maxNumberWarned!=null)&&!this.warningFlag) {
-            this.warningFlag=((this.content<=this.minNumberWarned)||(this.content>=this.maxNumberWarned));
-          }; 
+        // 3. CHECK IF THE VALUE IS MORE THAN MAX
+        if(this.maxError!=null&&this.maxError!=undefined&&this.value>this.maxError&&(!this.errorFlag)) {
+          this.errorFlag=true;
+          this.set("message",this.errors["maxExceededError"].message);
+                  console.log("- "+this.message+" è un errore "+this.errorFlag);
+        };
+      },
+
+      // WARNINGS CONTROLLER
+      controlWarnings:function(){
+        // 1. CHECK THE BASE
+        if(this.stepWarning!=null&&this.stepWarning!=undefined) {
+          if(this.value%this.stepWarning!=this.initialValue%this.stepWarning) {
+            this.warningFlag=true;
+            this.message=this.warnings["notInBaseWarning"].message;            
+          };
+        };
+
+        // 2. CHECK THE DIGITS ---------- FUTURE FEATURE!!
+      },
+
+      // VALUE CONTROLLER
+      _controlValue:function (Value) {
+        this.resetFlags();
+        console.log("Ho resettato i flag");
+               console.log("Ho controllato gli errori e:");
+        this.controlErrors();
+
+        if(!this.errorFlag) {        
+          this.controlWarnings();
         };
       },
 
       properties: {
+        // VALUE TO CONTROL
         value:{
           value:null,
           observer:"_controlValue",
         },
 
+        // ERROR PROPRETIES
         errors:{
           value:{ "notInListError":   { message:"The selected number has not been in the list"  },
-                  "maxExceededError": { message:"The maximum number has been exceeded"          },      
-                  "minExceededError": { message:"The mininum number has been exceeded"          },
+                  "minExceededError": { message:"The mininum number has been exceeded"          },                  
+                  "maxExceededError": { message:"The maximum number has been exceeded"          }      
+
           },
         },
 
@@ -72,51 +96,54 @@ The validator for number-spinner-plus, it contain error and warning rules and co
           value:null,
         },
 
-        minAllowed:{
+        minError:{
           type:Number,
           value:null,
         },
 
-        maxAllowed:{
+        maxError:{
           type:Number,
           value:null,
         },
 
         errorFlag:{
+          notify:true,
           type:Boolean,
           value:null,
         },
 
-        warnings:{ /*CHANGE!!!*/
-          type:Object,
-          value:[{ name:"notInListWarning",   message:"It is recommended to insert a different number"  },
-                {  name:"maxExceededWarning", message:"It is recommended to insert a larger number"     },      
-                {  name:"minExceededWarning", message:"It is recommended to insert a smaller number"
-                }],   
+        // WARNING PROPRETIES
+        warnings:{
+          value:{ "notInBaseWarning":   { message:"The selected number isn't in the base of the spinner"       },
+                  "digitsWarning":      { message:"The selected number has too many significant digits, it will consider the first "+this.digitsWarning+"significant digit"  }
+          },
         },
 
-        warnedNumbers:{
-          type:Array,
-          value:null,
-        },
-
-        minWarned:{
+        stepWarning:{
           type:Number,
           value:null,
         },
 
-        maxWarned:{
+        initialValue:{
+          type:Number,
+          value:null,
+        },
+
+        digitsWarning:{
           type:Number,
           value:null,
         },
 
         warningFlag:{
+          notify:true,
           type:Boolean,
           value:null,
         },
 
-        discrete:{
-          type:Boolean,
+        // MESSAGE TO message-container
+        message:{
+          notify:true,
+          type:String,
           value:null,
         },
       },
