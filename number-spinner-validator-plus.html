@@ -1,3 +1,5 @@
+
+
 <!--
 `number-spinner-validator-plus`
 The validator for number-spinner-plus, it contain error and warning rules and control functions
@@ -17,6 +19,11 @@ The validator for number-spinner-plus, it contain error and warning rules and co
         this.warningFlag=false;
       },
 
+      // FORMAT NUMBER (USED MANY TIMES, ONLY FOR A BETTER READABILITY)
+      formatNumber:function(numberToFormat) {
+        return parseFloat(d3.format("."+this.digits+"r")(numberToFormat));
+      },
+
       // CHECK IF IS A DISCRETE NUMBER-SPINNER-PLUS
       discrete:function() {
         if(this.allowedNumbers!=null&&this.allowedNumbers!=undefined){
@@ -26,69 +33,150 @@ The validator for number-spinner-plus, it contain error and warning rules and co
       },
 
       // ERRORS CONTROLLER
-      controlErrors:function(){  
-        console.log("Il valore è "+this.value)   
-        // 1. CHECK IF THE VALUE IS IN THE LIST (DISCRETE)
-        if(this.discrete()&&this.allowedNumbers.indexOf(this.value)==-1) {
-          this.errorFlag=true;
-          this.message=this.errors["notInListError"].message;
-                  console.log("- "+this.message+" è un errore "+this.errorFlag);
-        };
+      controlErrors:function(e){    
+        
+        // 1. CHECK IF THE VALUE IS NaN
+        if(isNaN(this.value))
+        {
+          // 1.1. MESSAGE NOT VISUALIZED IF I PRESS BACKSPACE OR DEL
+          if(["U+0008", "U+007F"].indexOf(e.keyIdentifier) == -1) {
+            this.errorFlag=true;
+            this.set("message",this.errors["NanValue"].message);
+          };
 
-        // 2. CHECK IF THE VALUE IS LESS THAN MIN
-        if(this.minError!=null&&this.minError!=undefined&&this.value<this.minError&&(!this.errorFlag)) {
-          this.errorFlag=true;
-          this.message=this.errors["minExceededError"].message;
-                  console.log("- "+this.message+" è un errore "+this.errorFlag);
-        };
+          // 1.2. CHANGE THE VALUE
+          if(isNaN(parseFloat(this.value))) {
+            this.value="";
+          }
+          else {
+            this.value=parseFloat(this.value);
+          };
+        }
 
-        // 3. CHECK IF THE VALUE IS MORE THAN MAX
-        if(this.maxError!=null&&this.maxError!=undefined&&this.value>this.maxError&&(!this.errorFlag)) {
-          this.errorFlag=true;
-          this.set("message",this.errors["maxExceededError"].message);
-                  console.log("- "+this.message+" è un errore "+this.errorFlag);
+        // IF IS A NUMBER, CONTROL OTHERS TYPES OF ERRORS (PREVENT LOOPS AND OTHER ISSUES)
+        else{
+          // 2. CHECK IF THE VALUE IS IN THE LIST (DISCRETE)
+          if(this.discrete()&&this.allowedNumbers.indexOf(parseFloat(this.value))==-1) {
+            console.log(this.allowedNumbers)
+            console.log(parseFloat(this.value))
+            this.errorFlag=true;
+            this.set("message",this.errors["notInListError"].message);
+          };
+
+          // 3. CHECK IF THE VALUE IS LESS THAN MIN
+          if((this.minError!=null&&this.minError!=undefined&&this.value<this.minError&&(!this.errorFlag))&&this.value!="") {
+            this.errorFlag=true;
+            this.formattedValue=this.minError;
+            this.set("message",this.errors["minExceededError"].message+this.formattedValue);
+          };
+
+          // 4. CHECK IF THE VALUE IS MORE THAN MAX
+          if((this.maxError!=null&&this.maxError!=undefined&&this.value>this.maxError&&(!this.errorFlag))&&this.value!="") {
+            this.errorFlag=true;
+            this.formattedValue=this.maxError;          
+            this.set("message",this.errors["maxExceededError"].message+this.formattedValue);
+          };
+
+          // 5. CHECK IF A NOT-NUMBER IS INSERTED
+          if(e.keyCode>=65&&e.keyCode<=90)
+          {
+            this.errorFlag=true;
+            this.set("message",this.errors["onlyNumbersError"].message);
+          };
         };
       },
 
+
       // WARNINGS CONTROLLER
-      controlWarnings:function(){
-        // 1. CHECK THE BASE
-        if(this.stepWarning!=null&&this.stepWarning!=undefined) {
-          if(this.value%this.stepWarning!=this.initialValue%this.stepWarning) {
+      controlWarnings:function(e){
+      
+      // 1. CHECK THE BASE
+      if(this.stepWarning!=null&&this.stepWarning!=undefined) {
+          // IF VALUE-MIN/STEP !isInteger (MODULE NOT USED)
+          if(!Number.isInteger(this.formatNumber((this.value-this.minError)/this.stepWarning))) {
             this.warningFlag=true;
-            this.message=this.warnings["notInBaseWarning"].message;            
+            // ROUND TO THE NEAR STEPPED VALUE (INCLUDE FORMAT NUMBER TO AVOID BINARY FLOATING POINT ERROR)
+            this.formattedValue=this.formatNumber((this.value%this.stepWarning)<(this.stepWarning-(this.value%this.stepWarning)) ? 
+                                this.value-(this.value%this.stepWarning) : this.value-(this.value%this.stepWarning)+this.stepWarning);         
+            this.set("message",this.warnings["notInBaseWarning"].message+this.formattedValue);
           };
         };
-
-        // 2. CHECK THE DIGITS ---------- FUTURE FEATURE!!
+        
+      // 2. CHECK THE DIGITS    
+       if((this.value!=NaN) && this.value!=parseFloat(d3.format("."+this.digits+"r")(this.value))) {
+            this.warningFlag = true;
+            this.formattedValue    = parseFloat(d3.format("."+this.digits+"r")(this.value));
+            this.set("message",this.warnings["digitsWarning"].message+this.digits+" digits");
+       };
       },
 
       // VALUE CONTROLLER
-      _controlValue:function (Value) {
-        this.resetFlags();
-        console.log("Ho resettato i flag");
-               console.log("Ho controllato gli errori e:");
-        this.controlErrors();
+      _controlValue:function (e) {
+          // 1. RESET ALL
+          this.resetFlags();
+          this.formattedValue=null;
 
-        if(!this.errorFlag) {        
-          this.controlWarnings();
-        };
+          // 2. IF THE FIELD ISN'T EMPTY, CONTROL
+          if(this.value!="")
+          {
+            this.controlErrors(e);
+            if(!this.errorFlag) {        
+              this.controlWarnings(e);
+            };
+          };
+
+          // 3. CHECK EMPTY FIELD WHEN YOU PRESS ENTER OR TAB
+          if(this.value==""&&e.keyIdentifier=="Enter")
+          {
+            this.warningFlag=true;
+            this.set("message",this.warnings["emptyField"].message);
+          };
+          
+          // 4. CHANGE THE VALUE WHEN YOU PRESS ENTER OR TAB, OR WHEN YOU TAP UP AND DOWN
+          if(e.keyIdentifier=="Enter"||e.type=="tap"||e.type=="focusout") {
+            // 4.1. RE-CONTROL THE VALUE IF THE INPUT IS FROM KEYBOARD           
+            if(this.formattedValue!=null){
+              this.value=this.formattedValue;
+              this.resetFlags();
+              this.formattedValue=null;            
+              this._controlValue(e);
+            };
+            // 5. ADD ZEROS IF NUMBER DIGITS<DIGITS
+            if(this.value!="") {
+              this.value=d3.format("."+this.digits+"r")(this.value);
+            };
+          };
       },
 
       properties: {
         // VALUE TO CONTROL
         value:{
+          type:Number,
           value:null,
-          observer:"_controlValue",
+          notify:true,
+        },
+
+        // VALUE MODIFIED AND FORMATTED
+        formattedValue:{
+          type:Number,
+          value:null,
         },
 
         // ERROR PROPRETIES
         errors:{
-          value:{ "notInListError":   { message:"The selected number has not been in the list"  },
-                  "minExceededError": { message:"The mininum number has been exceeded"          },                  
-                  "maxExceededError": { message:"The maximum number has been exceeded"          }      
+          value:{ "notInListError":   { message:"The selected number has not been in the list"                  },
+                  "NanValue":         { message:"The value in the spinner is an NaN"                            },
+                  "minExceededError": { message:"The mininum number has been exceeded, it will set to "/*MAX*/  },                  
+                  "maxExceededError": { message:"The maximum number has been exceeded, it will set to "/*MIN*/  },
+                  "onlyNumbersError": { message:"In this field only numbers, dots and signs are allowed"        }
 
           },
+        },
+
+        errorFlag:{
+          notify:true,
+          type:Boolean,
+          value:null,
         },
 
         allowedNumbers:{
@@ -106,17 +194,18 @@ The validator for number-spinner-plus, it contain error and warning rules and co
           value:null,
         },
 
-        errorFlag:{
+        // WARNING PROPRETIES
+        warnings:{
+          value:{ "notInBaseWarning":   { message:"The selected number isn't in the base of the spinner, it will set to "/*FORMATTED VALUE*/},
+                  "digitsWarning":      { message:"The selected number has too many significant digits, it will consider the first "        },
+                  "emptyField":         { message:"Empty field"                                                                             },
+          },
+        },
+
+        warningFlag:{
           notify:true,
           type:Boolean,
           value:null,
-        },
-
-        // WARNING PROPRETIES
-        warnings:{
-          value:{ "notInBaseWarning":   { message:"The selected number isn't in the base of the spinner"       },
-                  "digitsWarning":      { message:"The selected number has too many significant digits, it will consider the first "+this.digitsWarning+"significant digit"  }
-          },
         },
 
         stepWarning:{
@@ -124,20 +213,10 @@ The validator for number-spinner-plus, it contain error and warning rules and co
           value:null,
         },
 
-        initialValue:{
-          type:Number,
-          value:null,
-        },
-
-        digitsWarning:{
-          type:Number,
-          value:null,
-        },
-
-        warningFlag:{
+        digits:{
           notify:true,
-          type:Boolean,
-          value:null,
+          type:Number,
+          value:8,
         },
 
         // MESSAGE TO message-container

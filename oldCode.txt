@@ -48,3 +48,7 @@ if(this.notRecommendedCharset!=null&&!this.warningFlag) {
           this.message=this.get((flagType+"s")["maxExceededErro"+flagType.toUpperCase[0]+flagType.substr(1)].message);
         };
       },
+
+oldStepControl
+
+          if(this.formatNumber(this.value%this.stepWarning)!=this.formatNumber(this.minError%this.stepWarning))
