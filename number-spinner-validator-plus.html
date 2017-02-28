@@ -125,15 +125,15 @@ The validator for number-spinner-plus, it contain error and warning rules and co
             };
           };
 
-          // 3. CHECK EMPTY FIELD WHEN YOU PRESS ENTER OR TAB
-          if(this.value==""&&e.keyIdentifier=="Enter")
+          // 3. CHECK EMPTY FIELD WHEN YOU PRESS ENTER
+          if(this.value==""&&(e.keyIdentifier=="Enter"||e.type=="focusout"))
           {
             this.warningFlag=true;
             this.set("message",this.warnings["emptyField"].message);
           };
           
-          // 4. CHANGE THE VALUE WHEN YOU PRESS ENTER OR TAB, OR WHEN YOU TAP UP AND DOWN
-          if(e.keyIdentifier=="Enter"||e.type=="tap"||e.type=="focusout") {
+          // 4. CHANGE THE VALUE WHEN YOU PRESS ENTER, OR WHEN YOU TAP UP AND DOWN
+          if(e.keyIdentifier=="Enter"||e.keyCode==e.type=="tap"||e.type=="focusout") {
             // 4.1. RE-CONTROL THE VALUE IF THE INPUT IS FROM KEYBOARD           
             if(this.formattedValue!=null){
               this.value=this.formattedValue;
